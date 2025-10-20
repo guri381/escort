@@ -11,13 +11,13 @@ The `ActivateEscortRequestV1` object conveys immutable escort parameters and a c
 
 ## Attributes
 
-| Key | Type | Required | Description |
-| --- | --- | :---: | --- |
-| `EscortId` | UUID | Yes | Unique identifier of the escort instance. Stable for its lifecycle. |
-| `EscorterId` | UUID | Yes | Identifier of the Escorter (staffed instrumented vehicle). |
-| `Length` | Number (meters) | Yes | Protection Zone trailing distance. All Escortees SHALL remain within this longitudinal limit. |
-| `Width` | Number (meters) | Yes | Lateral Protection Zone extent used in open areas. Lane boundaries supersede Width on roads. |
-| `EscortPositionUpdate` | `EscortPositionUpdateV1` | Yes | Position snapshot used to seed AV prediction and Avoidance Zone calculation. |
+| Key | Type | Unit | Required | Description |
+| --- | --- | --- | :---: | --- |
+| `EscortId` | UUID | - | Yes | Unique identifier of the escort instance. Stable for its lifecycle. |
+| `EscorterId` | UUID | - |Yes | Identifier of the Escorter (staffed instrumented vehicle). |
+| `Length` | Number (double) | meters | Yes | Protection Zone trailing distance. All Escortees SHALL remain within this longitudinal limit. |
+| `Width` | Number (double) | meters | Yes | Lateral Protection Zone extent used in open areas. Lane boundaries supersede Width on roads. |
+| `EscortPositionUpdate` | `EscortPositionUpdateV1` | - | Yes | Position snapshot used to seed AV prediction and Avoidance Zone calculation. |
 
 > [!NOTE]
 > Additional dynamic fields (e.g., speed, heading, accuracies) are encapsulated within `EscortPositionUpdateV1` and are not duplicated here.
