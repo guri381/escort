@@ -6,11 +6,6 @@ This message is sent by the Fleet Management System (FMS) to the Autonomous Haul
 | --- | --- | --- |
 | `FMS` | Escort activation (immediately after sending `ActivateEscortRequestV1`) and every 1 s while active | AHS to forward/update internal AV state used for protection zone maintenance |
 
-> [!IMPORTANT]
-> FMS SHALL begin sending `EscortPositionUpdateV1` messages immediately after transmitting an `ActivateEscortRequestV1` (shall NOT wait for any `ActivateEscortResponseV1`).
->
-> If more than 2 consecutive `EscortPositionUpdateV1` messages are missed (configurable), AVs MAY expand protection margins or fail-safe according to site request.
-
 ## Message Attributes
 
 The `EscortPositionUpdateV1` payload object contains the following properties (top-level message header fields such as `Protocol`, `Version`, `Timestamp`, `EquipmentIds`, and `EscorterId` are defined in `MessageHeader.md`).
@@ -20,17 +15,17 @@ The `EscortPositionUpdateV1` payload object contains the following properties (t
 | `"EscorterId"` | shall | UUID | UUID | Identifier of the Escorter Vehicle |
 | `"GPSWeek"` | shall | uint32 | GPS Week | GPS Week when the position sample was measured (NOT when message transmitted) |
 | `"GPSMilliSecondInWeek"` | shall | uint32 | millisecond in GPS Week | millisecond in GPS Week when the position sample was measured (NOT when message transmitted) |
-| `"V2XStationId"` | should  | uint32 | StationId | V2X StationId of the Escorter SIV |
+| `"TODO field name"` | should  | string | Id | Unique ID on redundant network channel e.g. V2X station id |
 | `"Latitude"` | shall | double | degrees (WGS84) | 6+ decimal places (≈0.11 m). |
 | `"Longitude"` | shall | double | degrees (WGS84) | 6+ decimal places. |
 | `"Elevation"` | shall | double | meters | Elevation relative to WGS84 ellipsoid (2 decimals). |
 | `"Heading"` | shall | double | degrees | 0–359; 0 = true north, clockwise increase. |
 | `"Speed"` | shall | double | m/s | Instantaneous ground speed (consider conversion from native km/h). |
-| `"LatitudeAccuracy"` | should | double | meters (1σ) | 1‑sigma horizontal positional accuracy latitude component. |
-| `"LongitudeAccuracy"` | should | double | meters (1σ) | 1‑sigma horizontal positional accuracy longitude component. |
-| `"ElevationAccuracy"` | should | double | meters (1σ) | 1‑sigma vertical accuracy. |
-| `"HeadingAccuracy"` | should | double | degrees (1σ) | 1‑sigma heading accuracy. |
-| `"SpeedAccuracy"` | should | double | m/s (1σ) | 1‑sigma speed accuracy. |
+| `"LatitudeAccuracy"` | shall | double | meters (1σ) | 1‑sigma horizontal positional accuracy latitude component. |
+| `"LongitudeAccuracy"` | shall | double | meters (1σ) | 1‑sigma horizontal positional accuracy longitude component. |
+| `"ElevationAccuracy"` | shall | double | meters (1σ) | 1‑sigma vertical accuracy. |
+| `"HeadingAccuracy"` | shall | double | degrees (1σ) | 1‑sigma heading accuracy. |
+| `"SpeedAccuracy"` | shall | double | m/s (1σ) | 1‑sigma speed accuracy. |
 
 > [!NOTE]
 > - At minimum: `EscorterId`, `GPSWeek`, `GPSMilliSecondInWeek`, `Latitude`, `Longitude`, `Elevation`, `Heading`, `Speed` MUST be present.
