@@ -1,46 +1,68 @@
 # EscortPositionUpdateV1
 
-This message is sent by the Fleet Management System (FMS) to the Autonomous Haulage System (AHS) at a frequency of 1 Hz to report the current position and motion state of the active escorting vehicle (Escorter). The purpose is to enable all Autonomous Vehicles (AVs) to maintain an up‑to‑date dynamic protection zone around the escort.
+This message is sent by the Fleet Management System (FMS) to the Autonomous Haulage System (AHS) at a nominal frequency of 1 Hz to report current position and motion state of the active Escorter. It enables Autonomous Vehicles (AVs) to maintain and update their Avoidance Zone relative to the Protection Zone.
 
-| Sender | Triggered by | Triggers |
+| Sender | Triggered By | Effect |
 | --- | --- | --- |
-| `FMS` | Escort activation (immediately after sending `ActivateEscortRequestV1`) and every 1 s while active | AHS to forward/update internal AV state used for protection zone maintenance |
+| FMS | Escort Pending or Active (after `ActivateEscortRequestV1`) and periodic (every ~1 s) | Provides latest Escorter pose for AV prediction & Avoidance Zone constraint |
 
-## Message Attributes
+## Structure
+`EscortPositionUpdateV1` conveys an instantaneous pose sample (timestamped in GPS time) plus optional accuracy metrics and auxiliary identifiers.
 
-The `EscortPositionUpdateV1` payload object contains the following properties (top-level message header fields such as `Protocol`, `Version`, `Timestamp`, `EquipmentIds`, and `EscorterId` are defined in `MessageHeader.md`).
+## Attributes
+| Key | Type | Unit | Required | Description |
+| --- | --- | --- | :---: | --- |
+| `EscorterId` | UUID | — | Yes | Identifier of the Escorter; MUST match escort definition. |
+| `GpsWeek` | Integer | week count | Yes | GPS week number when sample measured (0–1023 rollover handling required). |
+| `GpsMilliSecondInWeek` | Integer | ms | Yes | Milliseconds within GPS week (range 0–604799999). |
+| `V2XStationId` | Integer | — | No | V2X station identifier enabling correlation with low‑latency V2X CAM data. |
+| `Latitude` | Double | degrees | Yes | WGS84 latitude; precision ≥ 1e‑6 degrees. |
+| `Longitude` | Double | degrees | Yes | WGS84 longitude; precision ≥ 1e‑6 degrees. |
+| `Elevation` | Double | meters | Yes | Height above WGS84 ellipsoid; precision ≥ 0.01 m. |
+| `Heading` | Double | degrees | Yes | Bearing clockwise from true north; range [0.0, 360.0). |
+| `Speed` | Double | m/s | Yes | Ground speed (non‑negative); precision ≥ 0.1 m/s. |
+| `LatitudeAccuracy` | Double | meters (1σ) | No | 1σ estimated latitude positional uncertainty. |
+| `LongitudeAccuracy` | Double | meters (1σ) | No | 1σ estimated longitude positional uncertainty. |
+| `ElevationAccuracy` | Double | meters (1σ) | No | 1σ estimated vertical uncertainty. |
+| `HeadingAccuracy` | Double | degrees (1σ) | No | 1σ estimated heading uncertainty. |
+| `SpeedAccuracy` | Double | m/s (1σ) | No | 1σ estimated speed uncertainty. |
 
-| Key | Req. Level | Type | Unit / Format | Description |
-| --- | --- | --- | --- | --- |
-| `"EscorterId"` | shall | UUID | UUID | Identifier of the Escorter Vehicle |
-| `"GPSWeek"` | shall | uint32 | GPS Week | GPS Week when the position sample was measured (NOT when message transmitted) |
-| `"GPSMilliSecondInWeek"` | shall | uint32 | millisecond in GPS Week | millisecond in GPS Week when the position sample was measured (NOT when message transmitted) |
-| `"TODO field name"` | should  | string | Id | Unique ID on redundant network channel e.g. V2X station id |
-| `"Latitude"` | shall | double | degrees (WGS84) | 6+ decimal places (≈0.11 m). |
-| `"Longitude"` | shall | double | degrees (WGS84) | 6+ decimal places. |
-| `"Elevation"` | shall | double | meters | Elevation relative to WGS84 ellipsoid (2 decimals). |
-| `"Heading"` | shall | double | degrees | 0–359; 0 = true north, clockwise increase. |
-| `"Speed"` | shall | double | m/s | Instantaneous ground speed (consider conversion from native km/h). |
-| `"LatitudeAccuracy"` | shall | double | meters (1σ) | 1‑sigma horizontal positional accuracy latitude component. |
-| `"LongitudeAccuracy"` | shall | double | meters (1σ) | 1‑sigma horizontal positional accuracy longitude component. |
-| `"ElevationAccuracy"` | shall | double | meters (1σ) | 1‑sigma vertical accuracy. |
-| `"HeadingAccuracy"` | shall | double | degrees (1σ) | 1‑sigma heading accuracy. |
-| `"SpeedAccuracy"` | shall | double | m/s (1σ) | 1‑sigma speed accuracy. |
+## Semantics
+- `GpsWeek` / `GpsMilliSecondInWeek` timestamp the measurement instant, not transmission time (which is provided by message `Timestamp` header).
+- Negative speed values SHALL NOT be used; reversing movement is outside escort assumption scope.
+- Accuracy fields, if present, MUST be strictly positive.
+- Omitted accuracy fields indicate unknown values (MUST NOT be substituted with zero).
+- Heading wraps at 360.0 degrees; a heading of 360.0 MUST NOT be sent (use 0.0 instead).
 
-> [!NOTE]
-> - At minimum: `EscorterId`, `GPSWeek`, `GPSMilliSecondInWeek`, `Latitude`, `Longitude`, `Elevation`, `Heading`, `Speed` MUST be present.
-> - Accuracy fields help AVs tune dynamic buffer growth; include when available.
+## Validation Rules
+Reject sample if any mandatory attribute missing or invalid:
+- `GpsMilliSecondInWeek` not in [0,604799999].
+- `Latitude` outside [-90,90] or `Longitude` outside [-180,180].
+- `Heading` < 0.0 or ≥ 360.0.
+- `Speed` < 0.0.
+- Any provided accuracy field ≤ 0.0.
+- `EscorterId` mismatch with escort instance.
 
-> [!NOTE]
-> Why V2X StationId?
-> - V2X CAM messages can be received with smaller latency than the `EscortPositionUpdateV1` messages therefore StationId of the Escorter is a valuable information to the AV.
+## Publication Requirements
+- Nominal rate: 1 Hz. Implementations SHOULD keep interval jitter within ±100 ms.
+- `Timestamp` (header) SHOULD monotonically increase; regressions MAY trigger prediction model expansion.
+- `Speed` SHALL be included even if zero.
 
-## Example
-```JSON
+## Degradation Handling
+| Condition | Recommended Behavior |
+| --- | --- |
+| Missed update (single interval) | AV expands Avoidance Zone using max feasible motion since last sample. |
+| Consecutive missed updates (≥2) | AV progressively enlarges Avoidance Zone; may flag degraded escort tracking. |
+| Stale GPS timestamp (> 5 s old) | Receiver MAY discard and request fresh sample; treat as missed update. |
+| Invalid field detected | Reject sample; log error; retain last valid sample for prediction. |
+
+## Examples
+Full sample with optional fields:
+```json
 {
   "Protocol": "Open-Autonomy",
   "Version": 1,
-  "Timestamp": "2025-09-26T10:15:30.125Z",
+  "Timestamp": "2025-10-20T10:15:30.125Z",
   "EquipmentIds": [
     "f0c3d5ab-2d6e-4a12-b9d9-9eaf1efc0abc",
     "9b8b6d54-1234-4c81-a911-5555bbbb7777"
@@ -59,21 +81,35 @@ The `EscortPositionUpdateV1` payload object contains the following properties (t
     "LongitudeAccuracy": 0.9,
     "ElevationAccuracy": 1.5,
     "HeadingAccuracy": 2.0,
-    "SpeedAccuracy": 0.2,
+    "SpeedAccuracy": 0.2
   }
 }
 ```
 
-## Validation Rules
-- SHALL be published at 1 Hz (±100 ms tolerance recommended).
-- SHALL monotonically increase `Timestamp` (no duplicates or regressions within a session).
-- SHALL include `Speed` even if zero.
-- If accuracy metrics are unknown, omit the respective fields rather than sending zero.
-
-## Failure / Degradation Handling
-// TODO: Document how the system should respond to message loss, unavailable data, etc..
-| Condition | Recommended Behavior |
-| --- | --- |
+Minimal mandatory sample:
+```json
+{
+  "Protocol": "Open-Autonomy",
+  "Version": 1,
+  "Timestamp": "2025-10-20T10:15:31.125Z",
+  "EquipmentIds": ["f0c3d5ab-2d6e-4a12-b9d9-9eaf1efc0abc"],
+  "EscortPositionUpdateV1": {
+    "EscorterId": "11111111-2222-3333-4444-555555555555",
+    "GpsWeek": 2444,
+    "GpsMilliSecondInWeek": 345679000,
+    "Latitude": 59.1546128,
+    "Longitude": 17.6212362,
+    "Elevation": 428.33,
+    "Heading": 87.9,
+    "Speed": 4.3
+  }
+}
+```
 
 ## Versioning
-Additional optional fields MAY be appended in future minor protocol versions; consumers SHALL ignore unknown fields.
+Additional optional fields MAY be added in future versions. Receivers SHALL ignore unknown optional fields while preserving mandatory validation. Backward compatibility for removed optional fields SHOULD be maintained for at least one major protocol iteration.
+
+## Notes
+- V2X integration: `V2XStationId` allows associating faster V2X CAM data with the escort position timeline for refined prediction.
+- Accuracy metrics enhance dynamic Avoidance Zone sizing; absence implies conservative expansion strategy.
+
