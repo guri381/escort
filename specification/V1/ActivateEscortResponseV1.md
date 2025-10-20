@@ -19,12 +19,7 @@ The `ActivateEscortResponseV1` message consists of the following properties.
 
 > [!IMPORTANT]
 > - AV shall only `Reject` an escort request if there is an error preventing it from processing the escort request.
-> - An AV may choose to send an `Activate` response without sending an `Pending` response first. In this case, the AV is indicating that it has activated the escort and is adhering to the specified policies. An AV shall send an `Pending` response if it cannot immediately adhere to the escort.
-> - AV shall only `Reject` an escort request if there is an error preventing it from processing the escort request.
-
-> [!NOTE]
-> The top-level message headers should contain the `EquipmentId` which indicate the origin AV of the `ActivateEscortResponseV1` message
-
+> - An AV may choose to send an `Activate` response without sending a `Pending` response first. In this case, the AV is indicating that it has activated the escort and is adhering to the specified policy. An AV shall send a `Pending` response if it cannot immediately adhere to the escort.
 
 ## Examples
 ### Typical Message
