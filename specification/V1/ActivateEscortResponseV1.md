@@ -33,7 +33,9 @@ The `ActivateEscortResponseV1` object conveys the escort identifier, activation 
 Recommended enumeration (implementations MAY extend):
 - `InvalidParameters` – Escort attributes failed validation.
 - `StalePosition` – Initial position snapshot too old.
-- `ResourceUnavailable` – Required internal resource (e.g., planner) unavailable.
+- `InvalidPosition` – Position Update contains invalid data
+- `InvalidMap` – Map is incompatible
+- `ResourceUnavailable` – Required internal resource (e.g., planner) - unavailable.
 - `InternalError` – Non‑recoverable internal failure.
 - `UnexpectedOffline` – AV transitioning offline state.
 - `ConflictingEscort` – Another active escort prevents activation.
