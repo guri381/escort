@@ -147,12 +147,12 @@ sequenceDiagram
 
 ### Expected Offline Scenario
 
-In the event that the truck has been parked up and powered off, the AHS may choose to accept the escort change request on behalf of the truck.
+In the event that the AV has been parked up and powered off, the AHS may choose to accept the escort activation request on behalf of the AV.
 
 > [!IMPORTANT]
 > It is the responsibility of the AHS to ensure that it is safe to respond on behalf of an AV.
 
-The following message provides an example of a escort change request that is pending after the truck has been powered off.
+The following message provides an example of an escort activation response from AHS when the corresponding AV is expected offline i.e. after the AV has been powered off.
 
 ```json
 {
@@ -162,12 +162,12 @@ The following message provides an example of a escort change request that is pen
     "EquipmentIds": ["e6d895b0-e377-4567-8b1a-8d2a4f3104ff"],
     "ActivateEscortResponseV1": {
         "EscortId": "00000000-0000-0000-0000-000000000001",
-        "Status": "Pending"
+        "Status": "Active"
     }
 }
 ```
 
-* When the truck comes back online the truck shall send OutOfSync to the FMS
+* When the AV comes back online the AV shall send OutOfSync to the FMS
 
 ```json
 {
@@ -180,15 +180,17 @@ The following message provides an example of a escort change request that is pen
 }
 ```
 
-* The FMS should then publish all active escorts to the truck using [SyncActiveEscortsRequestV1](#specification/V1/SyncActiveEscortsRequestV1.md) message which will allow the truck to synchronize its set of active escorts with the FMS.
+The FMS should then: 
+
+* publish all active escorts to the AV using [SyncActiveEscortsRequestV1](#specification/V1/SyncActiveEscortsRequestV1.md) message which will allow the AV to synchronize its set of active escorts with the FMS.
 
 * Resend any escorts that are still pending (including the escorts that were rejected due to being unexpectedly offline).
 
-### Loss of Comms Scenario 1 - Truck cannot be guaranteed to have come to a stop
+### Loss of Comms Scenario 1 - AV cannot be guaranteed to have come to a stop
 
-In the event that a truck has lost connection to the AHS, the AHS may choose to reject the escort change request until the truck has re-established connection.
+In the event that an AV has lost connection to the AHS, the AHS may choose to reject the escort activation request until the AV has re-established connection.
 
-The following message provides an example of a escort change request that is rejected due to the truck being unexpectedly offline.
+The following message provides an example of an escort activation request that is rejected due to the AV being unexpectedly offline.
 
 ```json
 {
@@ -204,9 +206,9 @@ The following message provides an example of a escort change request that is rej
 }
 ```
 
-In such an event, the FMS may attempt to continue sending the escort change request until the truck has re-established connection.
+In such an event, the FMS may attempt to continue sending the escort activation request until the AV has re-established connection.
 
-* When the truck comes back online, the truck shall send OutOfSync to the FMS
+* When the AV comes back online, the AV shall send OutOfSync to the FMS
 
 ```json
 {
@@ -218,18 +220,18 @@ In such an event, the FMS may attempt to continue sending the escort change requ
     }
 }
 ```
-* The FMS should then publish all active escorts to the truck using [SyncActiveEscortsRequestV1](#specification/V1/SyncActiveEscortsRequestV1.md) message which will allow the truck to synchronize its set of active escorts with the FMS.
+* The FMS should then publish all active escorts to the AV using [SyncActiveEscortsRequestV1](#specification/V1/SyncActiveEscortsRequestV1.md) message which will allow the AV to synchronize its set of active escorts with the FMS.
 
 * Resend any escorts that are still pending (including the escorts that were rejected due to being unexpectedly offline).
 
-### Loss of Comms Scenario 2 - Truck comes to stop after comms loss timeout
+### Loss of Comms Scenario 2 - AV comes to stop after comms loss timeout
 
-In the event that a truck has lost connection to the AHS, the AHS may choose to accept the escort change request after the truck can be guaranteed to have come to a stop due to the comms loss timeout.
+In the event that a AV has lost connection to the AHS, the AHS may choose to accept the escort activation request after the AV can be guaranteed to have come to a stop due to the comms loss timeout.
 
 > [!IMPORTANT]
 > It is the responsibility of the AHS to ensure that it is safe to respond on behalf of an AV.
 
-The following message provides an example of a escort change request that is pending after the truck has come to a stop.
+The following message provides an example of an escort activation response from AHS on behalf of the AV after the AV has come to a stop.
 
 ```json
 {
@@ -239,12 +241,12 @@ The following message provides an example of a escort change request that is pen
     "EquipmentIds": ["e6d895b0-e377-4567-8b1a-8d2a4f3104ff"],
     "ActivateEscortResponseV1": {
         "EscortId": "00000000-0000-0000-0000-000000000001",
-        "Status": "Pending"
+        "Status": "Active"
     }
 }
 ```
 
-* When the truck comes back online the truck shall send OutOfSync to the FMS
+* When the AV comes back online the AV shall send OutOfSync to the FMS
 
 ```json
 {
@@ -257,4 +259,4 @@ The following message provides an example of a escort change request that is pen
 }
 ```
 
-* The FMS should then publish all active escorts to the truck using [SyncActiveEscortsRequestV1](#specification/V1/SyncActiveEscortsRequestV1.md) message which will allow the truck to synchronize its set of active escorts with the FMS.
+* The FMS should then publish all active escorts to the AV using [SyncActiveEscortsRequestV1](#specification/V1/SyncActiveEscortsRequestV1.md) message which will allow the AV to synchronize its set of active escorts with the FMS.
